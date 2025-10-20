@@ -20,6 +20,7 @@ export const register = async (req, res) => {
         message: "User already exists with this email",
       });
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new userModel({
       name,
@@ -27,12 +28,14 @@ export const register = async (req, res) => {
       password: hashedPassword,
     });
 
-    await user.save();
-    // res.status(201).json({
-    //   success: true,
-    //   message: "User registered successfully",
-    // });
+    // Generate OTP
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.verifyOtp = otp;
+    user.verifyOtpExpireAt = Date.now() + 10 * 60 * 1000;
 
+    await user.save();
+
+    // Create JWT for cookie
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
@@ -41,27 +44,27 @@ export const register = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "None" : "strict",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
-    // Sending email
+    // Send verification email
     const mailOptions = {
       from: process.env.SENDER_EMAIL,
       to: email,
-      subject: "Welcome to Our Service",
-      text: `Hello ${name},\n\nThank you for registering with us! We're excited to have you on board.\n\nBest regards,\nYour Company`,
+      subject: "Verify Your Account with OTP",
+      text: `Hello ${name},\n\nYour verification OTP is: ${otp}\n\nThis OTP is valid for 10 minutes.\n\nBest regards,\nFantasy Buzz`,
     };
 
     await transporter.sendMail(mailOptions);
 
     return res.status(201).json({
       success: true,
-      message: "User registered in successfully",
+      message: "User registered successfully! OTP sent to your email.",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: `Server error occur: ${error.message}`,
+      message: `Server error: ${error.message}`,
     });
   }
 };
@@ -306,8 +309,8 @@ export const sendResetOTP = async (req, res) => {
 
 // Reset User Password
 export const resetPassword = async (req, res) => {
-  const { email ,otp, newPassword } = req.body;
-  
+  const { email, otp, newPassword } = req.body;
+
   if (!email || !otp || !newPassword) {
     return res.json({
       success: false,
@@ -316,7 +319,7 @@ export const resetPassword = async (req, res) => {
   }
 
   try {
-    const user = await userModel.findOne({ email});
+    const user = await userModel.findOne({ email });
     if (!user) {
       return res.json({
         success: false,
@@ -350,11 +353,10 @@ export const resetPassword = async (req, res) => {
       success: true,
       message: "Password reset successfully",
     });
-    
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: `Server error occur: ${error.message}`,
     });
   }
-}
+};

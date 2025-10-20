@@ -17,7 +17,5 @@ transporter.verify((error, success) => {
     console.log("✅ Email transporter is ready to send messages");
   }
 });
-  
-  
 
 export default transporter;

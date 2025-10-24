@@ -45,15 +45,9 @@ const app = express();
 connectDB();
 
 // Middleware
-const allowedOrigins = [process.env.FRONTEND_URL];
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
+app.use(cors());
 
 // Routes
 app.get("/", (req, res) => {

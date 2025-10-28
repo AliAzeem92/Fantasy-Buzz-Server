@@ -47,7 +47,16 @@ connectDB();
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000", // local dev
+      "https://fantasy-buzz.vercel.app", // your deployed frontend
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true, // 👈 very important for cookies
+  })
+);
 
 // Routes
 app.get("/", (req, res) => {

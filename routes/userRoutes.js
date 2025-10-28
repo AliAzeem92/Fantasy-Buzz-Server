@@ -1,9 +1,10 @@
 import express from "express";
 import { getUserData } from "../controller/userController.js";
-import userAuth from "../middleware/userAuth.js";
+import { requireVerifiedAuth } from "../middleware/authSecurity.js";
 
 const userRouter = express.Router();
 
-userRouter.get("/user-info", userAuth, getUserData);
+// All user routes require verified authentication
+userRouter.get("/user-info", requireVerifiedAuth, getUserData);
 
 export default userRouter;

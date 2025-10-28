@@ -27,6 +27,7 @@ export const register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      provider: 'local',
     });
 
     // Generate OTP
@@ -246,11 +247,28 @@ export const verifyEmail = async (req, res) => {
 };
 
 // Check if user is authenticated
-export const isAuthenticated = (req, res) => {
+export const isAuthenticated = async (req, res) => {
   try {
+    const user = await userModel.findById(req.userId).select('-password -verifyOtp -resetOtp -resetToken');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
     return res.json({
       success: true,
       message: "User is authenticated",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isVerified: user.isVerified,
+        provider: user.provider,
+        avatar: user.avatar
+      }
     });
   } catch (error) {
     return res.status(500).json({
